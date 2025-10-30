@@ -14,12 +14,17 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/options/categories', [CategoryController::class, 'category_dropdown']);
 Route::get('/options/sub-categories/{category_id}', [CategoryController::class, 'sub_category_dropdown']);
 
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{product}', [ProductController::class, 'show']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Admin Access Only
     Route::middleware(admin::class)->group(function () {
-        Route::apiResource('/products', ProductController::class);
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::put('/products/{product}', [ProductController::class, 'update']);
+        Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 
         Route::post('init_chunked_upload', [ChunkFileUploadController::class, 'initChunkedUpload']);
         Route::post('upload_chunk', [ChunkFileUploadController::class, 'uploadChunk']);

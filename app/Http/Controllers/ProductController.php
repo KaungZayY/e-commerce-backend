@@ -13,16 +13,78 @@ class ProductController extends Controller
     public function index(Request $req)
     {
         $perPage = $req->input('perPage') ?? null;
-        $filters = $req->only(['product_name', 'price_range']);
 
-        // Decode price_range if it's a JSON string
-        if (!empty($filters['price_range']) && is_string($filters['price_range'])) {
-            $filters['price_range'] = json_decode($filters['price_range'], true);
+        // Build filters array
+        $filters = [
+            'product_name' => $req->input('product_name'),
+            'category_id'  => $req->input('category_id'),
+            'is_popular'   => $req->input('is_popular'),
+            'on_sale'      => $req->input('on_sale'),
+            'in_stock'     => $req->input('in_stock'),
+            'on_backorder' => $req->input('on_backorder'),
+        ];
+
+        // Handle price_range properly
+        if ($req->has('price_range')) {
+            $priceRange = $req->input('price_range');
+
+            // If it's already an array (from query params like price_range[start])
+            if (is_array($priceRange)) {
+                $filters['price_range'] = [
+                    'start' => $priceRange['start'] ?? null,
+                    'end' => $priceRange['end'] ?? null,
+                ];
+            }
+            // If it's a JSON string
+            elseif (is_string($priceRange)) {
+                $filters['price_range'] = json_decode($priceRange, true);
+            }
         }
 
         $query = Product::filter($filters)
-            ->orderBy('created_at', 'desc')
+            ->with('category')
             ->with('created_by_user');
+
+        $sort = $req->input('sort', 'created_at_desc'); // default sort
+        switch ($sort) {
+            case 'price_asc': // price sorting considering discounts
+                $query->orderByRaw("
+            CASE 
+                WHEN discount_type IS NULL OR discount_amount IS NULL OR discount_amount = 0 
+                    THEN price
+                WHEN discount_type = 'amount' 
+                    THEN price - discount_amount
+                WHEN discount_type = 'percentage' 
+                    THEN price - (price * discount_amount / 100)
+                ELSE price
+            END ASC
+        ");
+                break;
+
+            case 'price_desc':
+                $query->orderByRaw("
+            CASE 
+                WHEN discount_type IS NULL OR discount_amount IS NULL OR discount_amount = 0 
+                    THEN price
+                WHEN discount_type = 'amount' 
+                    THEN price - discount_amount
+                WHEN discount_type = 'percentage' 
+                    THEN price - (price * discount_amount / 100)
+                ELSE price
+            END DESC
+        ");
+                break;
+            case 'is_popular':
+                $query->orderBy('is_popular', 'desc');
+                break;
+            case 'created_at_desc':
+                $query->orderBy('created_at', 'desc');
+                break;
+            default:
+                $query->orderBy('created_at', 'asc');
+                break;
+        }
+
 
         $data = $perPage ? $query->paginate($perPage) : $query->get();
 
