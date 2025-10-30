@@ -16,7 +16,14 @@ class Product extends Model
         'discount_type',
         'discount_amount',
         'created_by',
+        'moq',
+        'category_id',
     ];
+
+    protected $casts = [
+        'images' => 'array',
+    ];
+
 
     public function scopeFilter($query, $filters)
     {
@@ -29,10 +36,18 @@ class Product extends Model
 
             $query->whereBetween('price', [$start, $end]);
         }
+        if (isset($filters['category_id'])) {
+            $query->where('category_id', $filters['category_id']);
+        }
     }
 
     public function created_by_user()
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 }
