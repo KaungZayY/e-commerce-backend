@@ -35,10 +35,6 @@ class CategorySeeder extends Seeder
                 'parent_id' => null,
             ]);
 
-            $deals = Category::create([
-                'category_name' => 'Deals',
-                'parent_id' => null,
-            ]);
 
             $wholesale = Category::create([
                 'category_name' => 'Wholesale',
@@ -111,16 +107,6 @@ class CategorySeeder extends Seeder
             Category::create([
                 'category_name' => 'Modems',
                 'parent_id' => $networking->id,
-            ]);
-
-            // Children for Deals
-            Category::create([
-                'category_name' => 'Flash Sale',
-                'parent_id' => $deals->id,
-            ]);
-            Category::create([
-                'category_name' => 'Discount Bundles',
-                'parent_id' => $deals->id,
             ]);
 
             // Children for Wholesale
