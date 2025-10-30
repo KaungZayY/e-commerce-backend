@@ -114,7 +114,7 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load('category');
+        $product->load('category.parent_category');
         $productArray = $product->toArray();
         $productArray['images'] = $product->images ? json_decode($product->images, true) : [];
 
