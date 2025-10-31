@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\OrderRequest;
 use App\Models\Order;
+use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -35,22 +37,55 @@ class OrderController extends Controller
 
     public function store(OrderRequest $req)
     {
-        $data = $req->validated();
-        $data['user_id'] = auth('sanctum')->id();
-        $order = Order::create($data);
-        $order->update(['generated_id' => $this->generateOrderId()]);
+        try {
+            DB::beginTransaction();
 
-        $items = $data['cart'];
-        foreach ($items as $item) {
-            $order->products()->attach($item['product_id'], [
-                'qty' => $item['quantity'],
-                'final_unit_price' => $item['final_unit_price'],
-                'subtotal' => $item['quantity'] * $item['final_unit_price'],
-            ]);
+            $data = $req->validated();
+            $data['user_id'] = auth('sanctum')->id();
+            $order = Order::create($data);
+            $order->update(['generated_id' => $this->generateOrderId()]);
+
+            $items = $data['cart'];
+            foreach ($items as $item) {
+                // Check stock availability first
+                $product = Product::find($item['product_id']);
+
+                if (!$product) {
+                    return response()->json([
+                        'message' => 'Product with name ' . $product->product_name . ' not found',
+                    ], 404);
+                }
+
+                if ($product->qty < $item['quantity']) {
+                    return response()->json([
+                        'message' => "Insufficient stock for product '" . $product->product_name ."'",
+                    ], 400);
+                }
+
+                // Attach the product to the order
+                $order->products()->attach($item['product_id'], [
+                    'qty' => $item['quantity'],
+                    'final_unit_price' => $item['final_unit_price'],
+                    'subtotal' => $item['quantity'] * $item['final_unit_price'],
+                ]);
+
+                // Reduce the product quantity
+                $product->decrement('qty', $item['quantity']);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'order' => $order->load('products'),
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Order creation failed',
+                // 'error' => $e->getMessage(),
+            ], 400);
         }
-        return response()->json([
-            'order' => $order->load('products'),
-        ], 201);
     }
 
     protected function generateOrderId()
