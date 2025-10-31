@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductRequest;
+use App\Models\Favorite;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -117,6 +119,18 @@ class ProductController extends Controller
         $product->load('category.parent_category');
         $productArray = $product->toArray();
         $productArray['images'] = $product->images ? json_decode($product->images, true) : [];
+
+        $user = auth('sanctum')->user();
+        Log::info('Authenticated user check', ['user' => $user]);
+
+        $isFavorited = false;
+        if ($user) {
+            $isFavorited = \App\Models\Favorite::where('user_id', $user->id)
+                ->where('product_id', $product->id)
+                ->exists();
+        }
+
+        $productArray['is_favorited'] = $isFavorited;
 
         return response()->json([
             'product' => $productArray,

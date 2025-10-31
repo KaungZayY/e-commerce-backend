@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChunkFileUploadController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProductController;
 use App\Http\Middleware\admin;
 use Illuminate\Http\Request;
@@ -19,6 +20,9 @@ Route::get('/products/{product}', [ProductController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::post('/favorites', [FavoriteController::class, 'store']);
+    Route::delete('/favorites/{productId}', [FavoriteController::class, 'destroy']);
 
     // Admin Access Only
     Route::middleware(admin::class)->group(function () {
