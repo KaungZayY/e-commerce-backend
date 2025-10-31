@@ -17,6 +17,7 @@ Route::get('/options/sub-categories/{category_id}', [CategoryController::class, 
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{product}', [ProductController::class, 'show']);
+Route::get('/categories/{category}/products/{product}', [CategoryController::class, 'products']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
