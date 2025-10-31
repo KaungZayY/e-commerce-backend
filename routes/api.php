@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChunkFileUploadController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Middleware\admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +18,8 @@ Route::get('/options/sub-categories/{category_id}', [CategoryController::class, 
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{product}', [ProductController::class, 'show']);
+Route::get('/products/{product}/reviews', [ReviewController::class, 'index']);
+
 Route::get('/categories/{category}/products/{product}', [CategoryController::class, 'products']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -24,6 +27,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/favorites', [FavoriteController::class, 'index']);
     Route::post('/favorites', [FavoriteController::class, 'store']);
     Route::delete('/favorites/{productId}', [FavoriteController::class, 'destroy']);
+
+    Route::post('/products/{product}/reviews', [ReviewController::class, 'store']);
+    Route::get('/products/{product}/reviews/{review}', [ReviewController::class, 'show']);
+    Route::put('/products/{product}/reviews/{review}', [ReviewController::class, 'update']);
+    Route::delete('/products/{product}/reviews/{review}', [ReviewController::class, 'destroy']);
 
     // Admin Access Only
     Route::middleware(admin::class)->group(function () {
